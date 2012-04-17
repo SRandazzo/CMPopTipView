@@ -138,6 +138,7 @@ typedef enum {
 - (id)initWithCustomView:(UIView *)aView;
 
 - (void)presentPointingAtView:(UIView *)targetView inView:(UIView *)containerView animated:(BOOL)animated;
+- (void)presentPointingAtPoint:(CGPoint)point inView:(UIView *)containerView animated:(BOOL)animated;
 - (void)presentPointingAtBarButtonItem:(UIBarButtonItem *)barButtonItem animated:(BOOL)animated;
 - (void)dismissAnimated:(BOOL)animated;
 

@@ -231,6 +231,141 @@
     }
 }
 
+-(void)presentPointingAtPoint:(CGPoint)point inView:(UIView *)containerView animated:(BOOL)animated {
+    
+    [containerView addSubview:self];
+
+	CGPoint containerRelativeOrigin = [containerView.superview convertPoint:containerView.frame.origin toView:containerView.superview];
+    
+    // Size of rounded rect
+	CGFloat rectWidth;
+    
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        // iPad
+        if (maxWidth) {
+            if (maxWidth < containerView.frame.size.width) {
+                rectWidth = maxWidth;
+            }
+            else {
+                rectWidth = containerView.frame.size.width - 20;
+            }
+        }
+        else {
+            rectWidth = (int)(containerView.frame.size.width/3);
+        }
+    }
+    else {
+        // iPhone
+        if (maxWidth) {
+            if (maxWidth < containerView.frame.size.width) {
+                rectWidth = maxWidth;
+            }
+            else {
+                rectWidth = containerView.frame.size.width - 10;
+            }
+        }
+        else {
+            rectWidth = (int)(containerView.frame.size.width*2/3);
+        }
+    }
+    
+	CGSize textSize = CGSizeZero;
+    
+    if (self.message!=nil) {
+        textSize= [self.message sizeWithFont:textFont
+                           constrainedToSize:CGSizeMake(rectWidth, 99999.0)
+                               lineBreakMode:UILineBreakModeWordWrap];
+    }
+    if (self.customView != nil) {
+        textSize = self.customView.frame.size;
+    }
+    
+	bubbleSize = CGSizeMake(textSize.width + cornerRadius*2, textSize.height + cornerRadius*2);
+    	
+	if (point.y+containerView.bounds.size.height < containerRelativeOrigin.y) {
+		pointDirection = PointDirectionUp;
+	}
+	else if (point.y > containerRelativeOrigin.y+containerView.bounds.size.height) {
+		pointDirection = PointDirectionDown;
+	}
+    
+    pointDirection = PointDirectionDown;
+    
+    CGFloat W = containerView.frame.size.width;
+    
+	CGFloat x_p = point.x;
+	CGFloat x_b = x_p - roundf(bubbleSize.width/2);
+	if (x_b < sidePadding) {
+		x_b = sidePadding;
+	}
+	if (x_b + bubbleSize.width + sidePadding > W) {
+		x_b = W - bubbleSize.width - sidePadding;
+	}
+	if (x_p - pointerSize < x_b + cornerRadius) {
+		x_p = x_b + cornerRadius + pointerSize;
+	}
+	if (x_p + pointerSize > x_b + bubbleSize.width - cornerRadius) {
+		x_p = x_b + bubbleSize.width - cornerRadius - pointerSize;
+	}
+	
+	CGFloat fullHeight = bubbleSize.height + pointerSize + 10.0;
+	CGFloat y_b;
+	if (pointDirection == PointDirectionUp) {
+		y_b = topMargin + point.y;
+		targetPoint = CGPointMake(x_p-x_b, 0);
+	}
+	else {
+		y_b = point.y - fullHeight;
+		targetPoint = CGPointMake(x_p-x_b, fullHeight-2.0);
+	}
+
+    
+    
+    CGRect finalFrame = CGRectMake(x_b-sidePadding,
+								   y_b,
+								   bubbleSize.width+sidePadding*2,
+								   fullHeight);
+    
+    if (animated) {
+        if (animation == CMPopTipAnimationSlide) {
+            self.alpha = 0.0;
+            CGRect startFrame = finalFrame;
+            startFrame.origin.y += 10;
+            self.frame = startFrame;
+        }
+		else if (animation == CMPopTipAnimationPop) {
+            self.frame = finalFrame;
+            self.alpha = 0.5;
+            
+            // start a little smaller
+            self.transform = CGAffineTransformMakeScale(0.75f, 0.75f);
+            
+            // animate to a bigger size
+            [UIView beginAnimations:nil context:nil];
+            [UIView setAnimationDelegate:self];
+            [UIView setAnimationDidStopSelector:@selector(popAnimationDidStop:finished:context:)];
+            [UIView setAnimationDuration:0.15f];
+            self.transform = CGAffineTransformMakeScale(1.1f, 1.1f);
+            self.alpha = 1.0;
+            [UIView commitAnimations];
+        }
+		
+		[self setNeedsDisplay];
+		
+		if (animation == CMPopTipAnimationSlide) {
+			[UIView beginAnimations:nil context:nil];
+			self.alpha = 1.0;
+			self.frame = finalFrame;
+			[UIView commitAnimations];
+		}
+	}
+	else {
+		// Not animated
+		[self setNeedsDisplay];
+		self.frame = finalFrame;
+	}
+}
+
 - (void)presentPointingAtView:(UIView *)targetView inView:(UIView *)containerView animated:(BOOL)animated {
 	if (!self.targetObject) {
 		self.targetObject = targetView;
